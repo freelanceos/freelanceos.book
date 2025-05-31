@@ -1,40 +1,31 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Resend } from "npm:resend@3.1.0";
+import express from 'express';
+import { Resend } from 'resend';
+import cors from 'cors';
 
-const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Content-Type": "application/json",
-};
+const app = express();
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-serve(async (req) => {
-    if (req.method === "OPTIONS") {
-        return new Response(null, {
-            status: 204,
-            headers: corsHeaders,
-        });
-    }
+// Middleware
+app.use(cors());
+app.use(express.json());
 
+// Routes
+app.post('/send-email', async (req, res) => {
     try {
-        const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-        if (!RESEND_API_KEY) {
-            throw new Error("Missing RESEND_API_KEY environment variable");
-        }
-
-        const resend = new Resend(RESEND_API_KEY);
-        const { type, data } = await req.json();
+        const { type, data } = req.body;
 
         if (!type || !data) {
-            throw new Error("Missing required fields: type and data");
+            return res.status(400).json({
+                error: 'Missing required fields: type and data'
+            });
         }
 
         let emailData;
-        if (type === "contact") {
+        if (type === 'contact') {
             emailData = {
-                from: "FreelanceOS <contact@freelanceos.com>",
-                to: ["freelanceos2025@gmail.com"],
-                subject: "New Contact Form Submission",
+                from: 'FreelanceOS <contact@freelanceos.com>',
+                to: ['freelanceos2025@gmail.com'],
+                subject: 'New Contact Form Submission',
                 html: `
           <h2>New Contact Form Submission</h2>
           <p><strong>Name:</strong> ${data.name}</p>
@@ -44,11 +35,11 @@ serve(async (req) => {
           <p><strong>Timestamp:</strong> ${data.timestamp}</p>
         `,
             };
-        } else if (type === "order") {
+        } else if (type === 'order') {
             emailData = {
-                from: "FreelanceOS <orders@freelanceos.com>",
-                to: ["freelanceos2025@gmail.com"],
-                subject: "New Order Submission",
+                from: 'FreelanceOS <orders@freelanceos.com>',
+                to: ['freelanceos2025@gmail.com'],
+                subject: 'New Order Submission',
                 html: `
           <h2>New Order Submission</h2>
           <p><strong>Name:</strong> ${data.name}</p>
@@ -59,7 +50,9 @@ serve(async (req) => {
         `,
             };
         } else {
-            throw new Error("Invalid email type");
+            return res.status(400).json({
+                error: 'Invalid email type'
+            });
         }
 
         const { data: result, error } = await resend.emails.send(emailData);
@@ -68,17 +61,18 @@ serve(async (req) => {
             throw error;
         }
 
-        return new Response(JSON.stringify({ success: true, data: result }), {
-            headers: corsHeaders,
-        });
+        return res.json({ success: true, data: result });
     } catch (error) {
-        console.error("Error:", error.message);
-        return new Response(
-            JSON.stringify({
-                error: "Server error",
-                message: error.message,
-            }),
-            { status: 500, headers: corsHeaders }
-        );
+        console.error('Error:', error.message);
+        return res.status(500).json({
+            error: 'Server error',
+            message: error.message
+        });
     }
+});
+
+// Start server
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 }); 
