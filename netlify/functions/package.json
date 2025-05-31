@@ -1,0 +1,9 @@
+{
+    "name": "freelanceos-email-function",
+    "version": "1.0.0",
+    "description": "Netlify function for sending emails using Resend API",
+    "main": "sendEmail.js",
+    "dependencies": {
+        "resend": "^3.1.0"
+    }
+}

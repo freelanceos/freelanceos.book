@@ -1,69 +1,59 @@
-import { Resend } from 'resend';
+const API_URL = import.meta.env.VITE_NETLIFY_URL || '';
 
-const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY);
-
-export const sendContactEmail = async (data: {
+export async function sendContactEmail(data: {
     name: string;
     email: string;
-    phone: string;
     message: string;
-    timestamp: string;
-}) => {
+}) {
     try {
-        const { data: result, error } = await resend.emails.send({
-            from: 'FreelanceOS <contact@freelanceos.com>',
-            to: ['freelanceos2025@gmail.com'],
-            subject: 'New Contact Form Submission',
-            html: `
-                <h2>New Contact Form Submission</h2>
-                <p><strong>Name:</strong> ${data.name}</p>
-                <p><strong>Email:</strong> ${data.email}</p>
-                <p><strong>Phone:</strong> ${data.phone}</p>
-                <p><strong>Message:</strong> ${data.message}</p>
-                <p><strong>Timestamp:</strong> ${data.timestamp}</p>
-            `,
+        const response = await fetch(`${API_URL}/.netlify/functions/sendEmail`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                type: 'contact',
+                data,
+            }),
         });
 
-        if (error) {
-            throw error;
+        if (!response.ok) {
+            throw new Error('Failed to send email');
         }
 
-        return result;
+        return await response.json();
     } catch (error) {
-        console.error('Email Error:', error);
+        console.error('Error sending contact email:', error);
         throw error;
     }
-};
+}
 
-export const sendOrderEmail = async (data: {
+export async function sendOrderEmail(data: {
     name: string;
     email: string;
     phone: string;
-    payment: string;
-    timestamp: string;
-}) => {
+    service: string;
+    message: string;
+}) {
     try {
-        const { data: result, error } = await resend.emails.send({
-            from: 'FreelanceOS <orders@freelanceos.com>',
-            to: ['freelanceos2025@gmail.com'],
-            subject: 'New Order Submission',
-            html: `
-                <h2>New Order Submission</h2>
-                <p><strong>Name:</strong> ${data.name}</p>
-                <p><strong>Email:</strong> ${data.email}</p>
-                <p><strong>Phone:</strong> ${data.phone}</p>
-                <p><strong>Payment Method:</strong> ${data.payment}</p>
-                <p><strong>Timestamp:</strong> ${data.timestamp}</p>
-            `,
+        const response = await fetch(`${API_URL}/.netlify/functions/sendEmail`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                type: 'order',
+                data,
+            }),
         });
 
-        if (error) {
-            throw error;
+        if (!response.ok) {
+            throw new Error('Failed to send email');
         }
 
-        return result;
+        return await response.json();
     } catch (error) {
-        console.error('Email Error:', error);
+        console.error('Error sending order email:', error);
         throw error;
     }
-}; 
+} 
